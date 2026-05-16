@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Satvik Dinner Planner</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #FAF6F0; font-family: Georgia, 'Times New Roman', serif; color: #2C2520; }
+    button, input, textarea, select { font-family: Georgia, 'Times New Roman', serif; }
+    button { cursor: pointer; }
+    
+    /* Sleek scrollbar design */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #FAF6F0; }
+    ::-webkit-scrollbar-thumb { background: #E3D3C4; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    const { createElement: h, useState, useEffect, Fragment } = React;
+
+    // Premium Warm Culinary Color Scheme
+    const C = {
+      bg: '#FAF6F0',
+      card: '#FFFFFF',
+      cardAlt: '#FDFBF7',
+      border: '#E8DCD0',
+      terracotta: '#A94A24',
+      terracottaL: '#C5653D',
+      text: '#2C2520',
+      textMid: '#5C5046',
+      textSoft: '#948375',
+      green: '#3E7D52',
+      greenBg: '#EFF7F2',
+      goldBg: '#FCF3E3',
+      goldBorder: '#EAD3A8',
+      goldText: '#826227'
+    };
+
+    // Default Satvik Recipes (Pure Veg, No Onion, No Garlic)
+    const DEFAULT_RECIPES = [
+      {
+        id: 1,
+        name: 'Jeera Aloo & Sattvik Puri',
+        link: 'https://www.youtube.com',
+        basePeople: 2,
+        ingredients: [
+          { name: 'Potatoes (cubed)', qty: 4, unit: 'pcs' },
+          { name: 'Jeera (Cumin seeds)', qty: 1, unit: 'tsp' },
+          { name: 'Saindha Namak (Rock Salt)', qty: 1, unit: 'tsp' },
+          { name: 'Wheat Flour', qty: 1.5, unit: 'cups' },
+          { name: 'Ghee', qty: 2, unit: 'tbsp' }
+        ]
+      },
+      {
+        id: 2,
+        name: 'Sattvik Dal Khichdi',
+        link: 'https://www.youtube.com',
+        basePeople: 2,
+        ingredients: [
+          { name: 'Moong Dal', qty: 0.5, unit: 'cup' },
+          { name: 'Rice', qty: 0.5, unit: 'cup' },
+          { name: 'Carrots (chopped)', qty: 1, unit: 'pc' },
+          { name: 'Ghee', qty: 1.5, unit: 'tbsp' },
+          { name: 'Turmeric Powder', qty: 0.5, unit: 'tsp' },
+          { name: 'Ginger paste', qty: 1, unit: 'tsp' }
+        ]
+      }
+    ];
+
+    const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+    // ── Reusable App Components ─────────────────────────────────────────────
+    
+    function Card(props) {
+      return h('div', {
+        style: Object.assign({
+          background: C.card, borderRadius: '16px', padding: '20px 18px',
+          marginBottom: '14px', border: '1px solid ' + C.border,
+          boxShadow: '0 2px 6px rgba(44,37,32,0.02)'
+        }, props.style)
+      }, props.children);
+    }
+
+    function SectionTitle(props) {
+      return h('div', {
+        style: { fontSize: '13px', color: C.textSoft, fontWeight: '700',
+          letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px' }
+      }, props.text);
+    }
+
+    function Stepper(props) {
+      return h('div', { style: { display: 'flex', alignItems: 'center' } },
+        h('button', {
+          onClick: function() { props.onChange(Math.max(1, props.value - 1)); },
+          style: { width: 38, height: 38, borderRadius: '8px 0 0 8px', border: '1.5px solid ' + C.border,
+            borderRight: 'none', background: C.card, color: C.terracotta, fontSize: 18, fontWeight: '700' }
+        }, '−'),
+        h('div', {
+          style: { width: 46, height: 38, border: '1.5px solid ' + C.border, background: C.cardAlt,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 15, fontWeight: '700', color: C.text }
+        }, props.value),
+        h('button', {
+          onClick: function() { props.onChange(props.value + 1); },
+          style: { width: 38, height: 38, borderRadius: '0 8px 8px 0', border: '1.5px solid ' + C.border,
+            borderLeft: 'none', background: C.card, color: C.terracotta, fontSize: 18, fontWeight: '700' }
+        }, '+')
+      );
+    }
+
+    // ── Core Application ──────────────────────────────────────────────────────
+    function App() {
+      const [tab, setTab] = useState('planner');
+      
+      // Load and track Recipe list in Local Storage
+      const [recipes, setRecipes] = useState(function() {
+        const local = localStorage.getItem('sp_recipes');
+        return local ? JSON.parse(local) : DEFAULT_RECIPES;
+      });
+      
+      // Load and track Daily Meal Plans in Local Storage
+      const [planner, setPlanner] = useState(function() {
+        const local = localStorage.getItem('sp_planner');
+        return local ? JSON.parse(local) : {};
+      });
+
+      const [selectedDay, setSelectedDay] = useState('Monday');
+      const [isAddingRecipe, setIsAddingRecipe] = useState(false);
+      
+      // Form Input State Hooks
+      const [newRecName, setNewRecName] = useState('');
+      const [newRecLink, setNewRecLink] = useState('');
+      const [newRecBase, setNewRecBase] = useState(2);
+      const [newRecIngs, setNewRecIngs] = useState([{ name: '', qty: '', unit: 'pcs' }]);
+
+      // Synchronize changes to storage
+      useEffect(() => {
+        localStorage.setItem('sp_recipes', JSON.stringify(recipes));
+      }, [recipes]);
+
+      useEffect(() => {
+        localStorage.setItem('sp_planner', JSON.stringify(planner));
+      }, [planner]);
+
+      function assignRecipeToDay(day, recipeId) {
+        setPlanner(prev => {
+          const updated = Object.assign({}, prev);
+          if (!updated[day]) {
+            updated[day] = { recipeId: recipeId, peopleCount: 2 };
+          } else {
+            updated[day].recipeId = recipeId;
+          }
+          return updated;
+        });
+      }
+
+      function changeDayPeopleCount(day, count) {
+        setPlanner(prev => {
+          const updated = Object.assign({}, prev);
+          if (!updated[day]) {
+            updated[day] = { recipeId: '', peopleCount: count };
+          } else {
+            updated[day].peopleCount = count;
+          }
+          return updated;
+        });
+      }
+
+      function addIngRow() {
+        setNewRecIngs([...newRecIngs, { name: '', qty: '', unit: 'pcs' }]);
+      }
+
+      function updateIngRow(index, field, value) {
+        const updated = newRecIngs.map((ing, i) => {
+          if (i === index) {
+            return Object.assign({}, ing, { [field]: value });
+          }
+          return ing;
+        });
+        setNewRecIngs(updated);
+      }
+
+      function saveNewRecipe(e) {
+        e.preventDefault();
+        if (!newRecName.trim()) return alert('Please add a recipe name.');
+        
+        const cleanIngs = newRecIngs.filter(i => i.name.trim() && i.qty);
+        const newRecipe = {
+          id: Date.now(),
+          name: newRecName.trim(),
+          link: newRecLink.trim() || 'https://youtube.com',
+          basePeople: parseInt(newRecBase) || 2,
+          ingredients: cleanIngs.map(i => ({
+            name: i.name.trim(),
+            qty: parseFloat(i.qty) || 0,
+            unit: i.unit
+          }))
+        };
+
+        setRecipes([...recipes, newRecipe]);
+        
+        // Reset state values
+        setNewRecName('');
+        setNewRecLink('');
+        setNewRecBase(2);
+        setNewRecIngs([{ name: '', qty: '', unit: 'pcs' }]);
+        setIsAddingRecipe(false);
+      }
+
+      function deleteRecipe(id) {
+        if(confirm('Remove this recipe from your collection?')) {
+          setRecipes(recipes.filter(r => r.id !== id));
+        }
+      }
+
+      const activePlan = planner[selectedDay] || { recipeId: '', peopleCount: 2 };
+      const currentRecipe = recipes.find(r => r.id === parseInt(activePlan.recipeId));
+
+      return h('div', { style: { minHeight: '100vh', background: C.bg, paddingBottom: 80 } },
+        
+        // Dynamic App Header
+        h('div', { style: { background: 'linear-gradient(135deg,' + C.terracotta + ',' + C.terracottaL + ')',
+          padding: '24px 20px 20px', textAlign: 'center', boxShadow: '0 4px 12px rgba(169,74,36,0.15)' } },
+          h('div', { style: { fontSize: 30, marginBottom: 4 } }, '🥗 📋'),
+          h('h1', { style: { color: '#fff', fontSize: '22px', fontWeight: '700', letterSpacing: '0.02em' } }, 'Satvik Dinner Planner'),
+          h('p', { style: { color: 'rgba(255,255,255,0.85)', fontSize: '12px', marginTop: 4, fontStyle: 'italic' } }, 
+            'Pure Vegetarian · No Onion & No Garlic')
+        ),
+
+        // Navigation Bar Elements
+        h('div', { style: { display: 'flex', background: '#EFE4D8', borderBottom: '1px solid ' + C.border } },
+          [
+            { id: 'planner', label: '📅 Weekly Planner' },
+            { id: 'recipes', label: '🍽️ Recipe Book' }
+          ].map(t => {
+            const active = tab === t.id;
+            return h('button', {
+              key: t.id,
+              onClick: () => setTab(t.id),
+              style: {
+                flex: 1, padding: '14px 10px', border: 'none',
+                background: active ? C.card : 'transparent',
+                color: active ? C.terracotta : C.textSoft,
+                fontSize: '14px', fontWeight: active ? '700' : '400',
+                borderBottom: '3px solid ' + (active ? C.terracotta : 'transparent'),
+                transition: 'all 0.2s ease'
+              }
+            }, t.label);
+          })
+        ),
+
+        // ── WEEKLY PLANNER INTERFACE ──
+        tab === 'planner' && h('div', { style: { padding: 16 } },
+          
+          // Dietary Guidelines Framework Banner Indicator
+          h('div', { style: { background: C.goldBg, border: '1px solid ' + C.goldBorder, borderRadius: '12px', padding: '12px 14px', marginBottom: 16, display: 'flex', gap: 10, alignItems: 'center' } },
+            h('span', { style: { fontSize: 20 } }, '✨'),
+            h('p', { style: { fontSize: '12.5px', color: C.goldText, lineHeight: 1.5, fontWeight: '500' } }, 
+              'Dietary Profile Locked: Pure Vegetarian layout. No onion, no garlic. Potatoes and carrots are enabled.')
+          ),
+
+          // Sliding Row of Day Selection Tabs
+          h('div', { style: { display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 10, marginBottom: 12, WebkitOverflowScrolling: 'touch' } },
+            DAYS_OF_WEEK.map(d => {
+              const isSelected = selectedDay === d;
+              const hasMeal = planner[d] && planner[d].recipeId;
+              return h('button', {
+                key: d,
+                onClick: () => setSelectedDay(d),
+                style: {
+                  padding: '10px 16px', borderRadius: '20px', border: '1px solid ' + (isSelected ? C.terracotta : C.border),
+                  background: isSelected ? C.terracotta : C.card,
+                  color: isSelected ? '#fff' : C.textMid,
+                  fontSize: '13px', fontWeight: '700', whiteSpace: 'nowrap',
+                  boxShadow: isSelected ? '0 3px 8px rgba(169,74,36,0.2)' : 'none'
+                }
+              }, d + (hasMeal ? ' 🥗' : ''));
+            })
+          ),
+
+          // Planning Setting Module for Chosen Day
+          h(Card, null,
+            h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 } },
+              h('div', null,
+                h('h2', { style: { fontSize: '18px', color: C.text, fontWeight: '700' } }, selectedDay + "'s Dinner"),
+                h('p', { style: { fontSize: '12px', color: C.textSoft, marginTop: 2 } }, 'Set headcount and choose meal')
+              ),
+              h(Stepper, {
+                value: activePlan.peopleCount,
+                onChange: (v) => changeDayPeopleCount(selectedDay, v)
+              })
+            ),
+
+            h('hr', { style: { border: 'none', borderTop: '1px solid ' + C.border, margin: '14px 0' } }),
+
+            h(SectionTitle, { text: 'Choose Dinner Recipe' }),
+            h('select', {
+              value: activePlan.recipeId,
+              onChange: (e) => assignRecipeToDay(selectedDay, e.target.value),
+              style: {
+                width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid ' + C.border,
+                background: C.cardAlt, fontSize: '15px', color: C.text, outline: 'none'
+              }
+            },
+              h('option', { value: '' }, '-- Click to select a Recipe --'),
+              recipes.map(r => h('option', { key: r.id, value: r.id }, r.name))
+            )
+          ),
+
+          // Ingredient Auto-Scaling Module
+          currentRecipe ? h(Fragment, null,
+            h(Card, null,
+              h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 } },
+                h('h3', { style: { fontSize: '16px', color: C.terracotta, fontWeight: '700' } }, '🛒 Scaled Ingredients'),
+                h('span', { style: { fontSize: '12px', background: C.greenBg, color: C.green, padding: '4px 10px', borderRadius: '12px', fontWeight: '700' } }, 
+                  'For ' + activePlan.peopleCount + ' People')
+              ),
+              
+              h('div', { style: { display: 'flex', flexDirection: 'column', gap: 10 } },
+                currentRecipe.ingredients.map((ing, idx) => {
+                  // Direct mathematical auto-scaler mapping based on dynamic headcount
+                  const scaledQty = ((ing.qty / currentRecipe.basePeople) * activePlan.peopleCount).toFixed(2);
+                  const cleanQty = parseFloat(scaledQty); 
+
+                  return h('div', { key: idx, style: { display: 'flex', justifyContent: 'space-between', paddingBottom: 8, borderBottom: '1px dashed ' + C.border, fontSize: '14px' } },
+                    h('span', { style: { fontWeight: '500', color: C.text } }, ing.name),
+                    h('span', { style: { fontWeight: '700', color: C.terracotta } }, cleanQty + ' ' + ing.unit)
+                  );
+                })
+              ),
+
+              currentRecipe.link && h('a', {
+                href: currentRecipe.link, target: '_blank', rel: 'noreferrer',
+                style: {
+                  display: 'block', marginTop: '18px', textAlign: 'center', padding: '10px',
+                  background: '#F0E5DA', borderRadius: '8px', color: C.textMid,
+                  fontSize: '13px', fontWeight: '700', textDecoration: 'none'
+                }
+              }, '📺 View Cooking Reference Link ↗')
+            )
+          ) : h('div', { style: { textAlign: 'center', padding: '40px 20px', color: C.textSoft } },
+              h('span', { style: { fontSize: '32px', display: 'block', marginBottom: 8 } }, '🍽️'),
+              'No recipe assigned for this evening. Assign one from the checklist drop-down above to see scaled ingredients.'
+            )
+        ),
+
+        // ── RECIPE BOOK MANAGEMENT INTERFACE ──
+        tab === 'recipes' && h('div', { style: { padding: 16 } },
+          
+          !isAddingRecipe ? h(Fragment, null,
+            h('button', {
+              onClick: () => setIsAddingRecipe(true),
+              style: {
+                width: '100%', padding: '14px', borderRadius: '12px', background: C.terracotta,
+                color: '#fff', border: 'none', fontSize: '15px', fontWeight: '700', marginBottom: 16,
+                boxShadow: '0 4px 10px rgba(169,74,36,0.2)'
+              }
+            }, '➕ Add New Recipe to Master List'),
+
+            h(SectionTitle, { text: 'Your Recipes (' + recipes.length + ')' }),
+            
+            recipes.map(r => h(Card, { key: r.id },
+              h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 } },
+                h('div', null,
+                  h('h4', { style: { fontSize: '16px', fontWeight: '700', color: C.text } }, r.name),
+                  h('p', { style: { fontSize: '12px', color: C.textSoft, marginTop: 2 } }, 'Base ratios measured for: ' + r.basePeople + ' people')
+                ),
+                h('button', {
+                  onClick: () => deleteRecipe(r.id),
+                  style: { border: 'none', background: 'transparent', color: '#C63D3D', fontSize: '12px', fontWeight: '700' }
+                }, '✕ Remove')
+              ),
+              h('div', { style: { marginTop: 12, fontSize: '13px', color: C.textMid } },
+                h('strong', null, 'Ingredients: '),
+                r.ingredients.map(i => i.name).join(', ')
+              )
+            ))
+          ) : h(Card, null,
+            // Custom Input Formulation Form
+            h('form', { onSubmit: saveNewRecipe },
+              h('h3', { style: { fontSize: '17px', fontWeight: '700', color: C.terracotta, marginBottom: 14 } }, 'Create Custom Recipe'),
+              
+              h('label', { style: { fontSize: '12px', fontWeight: '700', color: C.textMid, display: 'block', marginBottom: 6 } }, 'Recipe Name'),
+              h('input', {
+                type: 'text', placeholder: 'e.g., Sattvik Paneer Bhurji', value: newRecName,
+                onChange: (e) => setNewRecName(e.target.value),
+                style: { width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid ' + C.border, marginBottom: 14, fontSize: '14px' }
+              }),
+
+              h('label', { style: { fontSize: '12px', fontWeight: '700', color: C.textMid, display: 'block', marginBottom: 6 } }, 'Video Reference Link'),
+              h('input', {
+                type: 'url', placeholder: 'https://youtube.com/...', value: newRecLink,
+                onChange: (e) => setNewRecLink(e.target.value),
+                style: { width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid ' + C.border, marginBottom: 14, fontSize: '14px' }
+              }),
+
+              h('label', { style: { fontSize: '12px', fontWeight: '700', color: C.textMid, display: 'block', marginBottom: 6 } }, 'Base Quantities Measured For (No. of People)'),
+              h('input', {
+                type: 'number', min: '1', value: newRecBase,
+                onChange: (e) => setNewRecBase(e.target.value),
+                style: { width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid ' + C.border, marginBottom: 16, fontSize: '14px' }
+              }),
+
+              h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 } },
+                h(SectionTitle, { text: 'Ingredients List' }),
+                h('button', { type: 'button', onClick: addIngRow, style: { fontSize: '12px', color: C.terracotta, background: 'none', border: 'none', fontWeight: '700' } }, '＋ Add Row')
+              ),
+
+              newRecIngs.map((ing, index) => h('div', { key: index, style: { display: 'flex', gap: 6, marginBottom: 8 } },
+                h('input', {
+                  type: 'text', placeholder: 'Ingredient Name', value: ing.name,
+                  onChange: (e) => updateIngRow(index, 'name', e.target.value),
+                  style: { flex: 2, padding: '8px', borderRadius: '6px', border: '1px solid ' + C.border, fontSize: '13px' }
+                }),
+                h('input', {
+                  type: 'number', step: 'any', placeholder: 'Qty', value: ing.qty,
+                  onChange: (e) => updateIngRow(index, 'qty', e.target.value),
+                  style: { flex: 0.8, padding: '8px', borderRadius: '6px', border: '1px solid ' + C.border, fontSize: '13px', width: '60px' }
+                }),
+                h('select', {
+                  value: ing.unit,
+                  onChange: (e) => updateIngRow(index, 'unit', e.target.value),
+                  style: { flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid ' + C.border, fontSize: '13px', background: '#fff' }
+                },
+                  ['pcs', 'cups', 'g', 'kg', 'ml', 'tsp', 'tbsp'].map(u => h('option', { key: u, value: u }, u))
+                )
+              )),
+
+              h('div', { style: { display: 'flex', gap: 10, marginTop: 20 } },
+                h('button', {
+                  type: 'button', onClick: () => setIsAddingRecipe(false),
+                  style: { flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid ' + C.border, background: '#fff', color: C.textMid, fontWeight: '700' }
+                }, 'Cancel'),
+                h('button', {
+                  type: 'submit',
+                  style: { flex: 1, padding: '12px', borderRadius: '10px', border: 'none', background: C.green, color: '#fff', fontWeight: '700' }
+                }, 'Save Recipe')
+              )
+            )
+          )
+        )
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(h(App, null));
+  </script>
+</body>
+</html>
