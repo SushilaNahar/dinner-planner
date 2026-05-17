@@ -3,59 +3,45 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
-  <title>Dinner Notes 2026</title>
-  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet"/>
+  <title>Dinner Journal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <style>
-    :root {
-      --bg: #1C1812;
-      --border: #3A3025;
-      --coral: #DA7756;
-      --text: #F0E8D8;
-      --text2: #9A8878;
-      --ph: #5A4A3A;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    /* BASIC STYLING - NO VARIABLES TO PREVENT LOADING ERRORS */
     body { 
-      background: var(--bg); 
-      color: var(--text); 
+      background-color: #1C1812 !important; 
+      color: #F0E8D8 !important; 
       font-family: 'Lora', Georgia, serif; 
       display: flex; 
-      justify-content: center; /* Centers on Mac */
+      justify-content: center;
+      margin: 0;
     }
-    #root { width: 100%; max-width: 500px; min-height: 100vh; padding-bottom: 50px; }
+    #root { width: 100%; max-width: 500px; min-height: 100vh; padding: 20px; background: #1C1812; }
 
-    /* HEADER STYLE */
-    .hdr { padding: 30px 20px 10px; border-bottom: 1.5px solid var(--border); background: var(--bg); position: sticky; top: 0; z-index: 100; }
-    .hdr-date { font-family: 'Dancing Script', cursive; font-size: 2rem; color: var(--coral); font-weight: 700; }
+    .header-title { font-family: 'Dancing Script', cursive; font-size: 2.5rem; color: #DA7756; margin-bottom: 20px; }
     
-    /* NAV STYLE */
-    .tnav { display: flex; margin-top: 15px; border-bottom: 1px solid var(--border); }
-    .tnb { flex: 1; padding: 10px; background: none; border: none; color: var(--text2); font-family: 'Lora'; cursor: pointer; border-bottom: 3px solid transparent; }
-    .tnb.active { color: var(--coral); border-bottom-color: var(--coral); font-weight: 700; }
+    .nav-bar { display: flex; border-bottom: 1px solid #3A3025; margin-bottom: 20px; }
+    .nav-btn { flex: 1; padding: 15px; background: none; border: none; color: #9A8878; font-family: 'Lora'; cursor: pointer; border-bottom: 3px solid transparent; }
+    .nav-btn.active { color: #DA7756; border-bottom-color: #DA7756; font-weight: bold; }
 
-    /* CARDS & LISTS */
-    .card { padding: 20px; border-bottom: 1px solid var(--border); }
-    .label { font-size: 0.75rem; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-    .val-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-    .count { font-family: 'Dancing Script', cursive; font-size: 2.2rem; color: var(--coral); }
+    .card { background: #26211A; padding: 20px; border-radius: 12px; border: 1px solid #3A3025; margin-bottom: 20px; }
+    .label { font-size: 0.75rem; color: #9A8878; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
     
-    .btn-circle { width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--border); background: none; color: var(--coral); font-size: 1.2rem; cursor: pointer; }
-    .btn-circle:active { background: var(--border); }
+    .big-number { font-family: 'Dancing Script', cursive; font-size: 2.5rem; color: #DA7756; }
+    
+    .btn-circle { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #DA7756; background: none; color: #DA7756; font-size: 1.5rem; cursor: pointer; }
 
-    select, input { 
-      width: 100%; background: none; border: none; border-bottom: 1px solid var(--border); 
-      color: var(--text); font-family: 'Lora'; font-size: 1.1rem; padding: 10px 0; outline: none; 
+    input, select { 
+      width: 100%; background: #1C1812; border: 1px solid #3A3025; 
+      color: #F0E8D8; font-family: 'Lora'; font-size: 1.1rem; padding: 12px; border-radius: 8px; outline: none; margin-bottom: 15px;
     }
-    select { color: var(--coral); font-weight: 600; }
 
-    /* INGREDIENT ROWS */
-    .ing-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
-    .ing-qty { color: var(--coral); font-weight: 700; font-family: 'Dancing Script', cursive; font-size: 1.3rem; }
+    .ing-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #3A3025; }
+    .ing-qty { color: #DA7756; font-weight: bold; font-family: 'Dancing Script', cursive; font-size: 1.4rem; }
 
-    .btn-main { width: 100%; padding: 15px; background: var(--coral); color: #fff; border: none; border-radius: 4px; font-family: 'Lora'; font-weight: 700; margin-top: 20px; cursor: pointer; }
-    .link-btn { display: block; text-align: center; margin-top: 25px; color: var(--coral); font-family: 'Dancing Script', cursive; font-size: 1.4rem; text-decoration: none; }
+    .action-btn { width: 100%; padding: 16px; background: #DA7756; color: white; border: none; border-radius: 8px; font-family: 'Lora'; font-weight: bold; cursor: pointer; }
+    .edit-btn { background: none; border: 1px solid #3A3025; color: #9A8878; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
   </style>
 </head>
 <body>
@@ -65,84 +51,95 @@
 
     function App() {
       const [tab, setTab] = useState('planner');
-      const [recipes, setRecipes] = useState(() => JSON.parse(localStorage.getItem('pln26_recipes')) || []);
-      const [planner, setPlanner] = useState(() => JSON.parse(localStorage.getItem('pln26_plan')) || {});
-      const [selDate, setSelDate] = useState(new Date().toISOString().split('T')[0]);
-      const [isAdding, setIsAdding] = useState(false);
-      const [newRec, setNewRec] = useState({ name: '', link: '', basePeople: 2, ingredients: [{ name: '', qty: '' }] });
+      const [recipes, setRecipes] = useState(() => JSON.parse(localStorage.getItem('dj_v4_recs')) || []);
+      const [planner, setPlanner] = useState(() => JSON.parse(localStorage.getItem('dj_v4_plan')) || {});
+      const [editingId, setEditingId] = useState(null);
+      const [form, setForm] = useState({ name: '', link: '', basePeople: 2, ingredients: [{ name: '', qty: '' }] });
 
-      useEffect(() => localStorage.setItem('pln26_recipes', JSON.stringify(recipes)), [recipes]);
-      useEffect(() => localStorage.setItem('pln26_plan', JSON.stringify(planner)), [planner]);
+      useEffect(() => localStorage.setItem('dj_v4_recs', JSON.stringify(recipes)), [recipes]);
+      useEffect(() => localStorage.setItem('dj_v4_plan', JSON.stringify(planner)), [planner]);
 
-      const plan = planner[selDate] || { recipeId: '', peopleCount: 2 };
+      const plan = planner['today'] || { recipeId: '', peopleCount: 2 };
       const current = recipes.find(r => r.id === parseInt(plan.recipeId));
 
+      const startEdit = (recipe) => {
+        setForm(recipe);
+        setEditingId(recipe.id);
+        setTab('add');
+      };
+
+      const saveRecipe = () => {
+        if (!form.name) return;
+        if (editingId) {
+          setRecipes(recipes.map(r => r.id === editingId ? { ...form, id: editingId } : r));
+        } else {
+          setRecipes([...recipes, { ...form, id: Date.now() }]);
+        }
+        setEditingId(null);
+        setTab('recipes');
+        setForm({ name: '', link: '', basePeople: 2, ingredients: [{ name: '', qty: '' }] });
+      };
+
       return h('div', null,
-        h('div', { className: 'hdr' },
-          h('div', { className: 'hdr-date' }, tab === 'planner' ? 'Dinner Table' : 'Recipe Journal'),
-          h('div', { className: 'tnav' },
-            h('button', { className: `tnb ${tab === 'planner' ? 'active' : ''}`, onClick: () => setTab('planner') }, 'Daily Plan'),
-            h('button', { className: `tnb ${tab === 'recipes' ? 'active' : ''}`, onClick: () => setTab('recipes') }, 'Library')
-          )
+        h('div', { className: 'header-title' }, 'Dinner Journal'),
+        h('div', { className: 'nav-bar' },
+          h('button', { className: `nav-btn ${tab === 'planner' ? 'active' : ''}`, onClick: () => setTab('planner') }, 'Plan'),
+          h('button', { className: `nav-btn ${tab === 'recipes' ? 'active' : ''}`, onClick: () => setTab('recipes') }, 'Library'),
+          h('button', { className: `nav-btn ${tab === 'add' ? 'active' : ''}`, onClick: () => { setEditingId(null); setTab('add'); } }, '+ New')
         ),
 
-        tab === 'planner' && h('div', { className: 'card' },
-          h('div', { className: 'label' }, 'Serving For'),
-          h('div', { className: 'val-row' },
-            h('div', { className: 'count' }, plan.peopleCount + ' Heads'),
-            h('div', { style: { display: 'flex', gap: '15px' } },
-              h('button', { className: 'btn-circle', onClick: () => setPlanner({...planner, [selDate]: {...plan, peopleCount: Math.max(1, plan.peopleCount - 1)}}) }, '−'),
-              h('button', { className: 'btn-circle', onClick: () => setPlanner({...planner, [selDate]: {...plan, peopleCount: plan.peopleCount + 1}}) }, '+')
+        tab === 'planner' && h('div', null,
+          h('div', { className: 'card' },
+            h('div', { className: 'label' }, 'Guests Tonight'),
+            h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' } },
+              h('div', { className: 'big-number' }, plan.peopleCount + ' People'),
+              h('div', { style: { display: 'flex', gap: '10px' } },
+                h('button', { className: 'btn-circle', onClick: () => setPlanner({...planner, today: {...plan, peopleCount: Math.max(1, plan.peopleCount - 1)}}) }, '−'),
+                h('button', { className: 'btn-circle', onClick: () => setPlanner({...planner, today: {...plan, peopleCount: plan.peopleCount + 1}}) }, '+')
+              )
+            ),
+            h('div', { className: 'label' }, 'Menu Selection'),
+            h('select', { value: plan.recipeId, onChange: (e) => setPlanner({...planner, today: {...plan, recipeId: e.target.value}}) },
+              h('option', { value: '' }, 'Pick a recipe...'),
+              recipes.map(r => h('option', { key: r.id, value: r.id }, r.name))
             )
           ),
-          h('div', { className: 'label' }, 'What are we cooking?'),
-          h('select', { 
-            value: plan.recipeId, 
-            onChange: (e) => setPlanner({...planner, [selDate]: {...plan, recipeId: e.target.value}}),
-          },
-            h('option', { value: '' }, 'Tap to select a recipe...'),
-            recipes.map(r => h('option', { key: r.id, value: r.id }, r.name))
-          ),
-
-          current && h('div', { style: { marginTop: '40px' } },
-            h('div', { className: 'label' }, 'Adjusted Ingredients'),
+          current && h('div', { className: 'card' },
+            h('div', { className: 'label' }, 'Scaled Ingredients'),
             current.ingredients.map((ing, i) => h('div', { key: i, className: 'ing-row' },
               h('span', null, ing.name),
               h('span', { className: 'ing-qty' }, ((parseFloat(ing.qty) / current.basePeople) * plan.peopleCount).toFixed(1))
             )),
-            current.link && h('a', { href: current.link, target: '_blank', className: 'link-btn' }, 'Watch Chef on YouTube ↗')
+            current.link && h('a', { href: current.link, target: '_blank', style: { display: 'block', textAlign: 'center', marginTop: '20px', color: '#DA7756', textDecoration: 'none' } }, 'Open Recipe Video ↗')
           )
         ),
 
-        tab === 'recipes' && h('div', { className: 'card' },
-          !isAdding ? h('div', null,
-            h('button', { className: 'btn-main', onClick: () => setIsAdding(true) }, '+ Write New Recipe'),
-            recipes.map(r => h('div', { key: r.id, style: { padding: '20px 0', borderBottom: '1px solid var(--border)' } },
-              h('div', { style: { fontSize: '1.2rem', color: 'var(--coral)', fontWeight: '600' } }, r.name),
-              h('div', { style: { fontSize: '0.8rem', color: var(--text2), fontStyle: 'italic' } }, `Base: ${r.basePeople} people`),
-              h('button', { 
-                onClick: () => confirm('Delete?') && setRecipes(recipes.filter(x => x.id !== r.id)),
-                style: { background: 'none', border: 'none', color: 'var(--ph)', fontSize: '0.7rem', marginTop: '10px' }
-              }, 'Remove')
-            ))
-          ) : h('div', null,
-            h('div', { className: 'label' }, 'Recipe Detail'),
-            h('input', { placeholder: 'Name (e.g. Grandma\'s Dal)', onChange: e => setNewRec({...newRec, name: e.target.value}) }),
-            h('input', { placeholder: 'YouTube URL', style: { marginTop: '10px' }, onChange: e => setNewRec({...newRec, link: e.target.value}) }),
-            h('input', { type: 'number', placeholder: 'Serves how many in video?', style: { marginTop: '10px' }, onChange: e => setNewRec({...newRec, basePeople: e.target.value}) }),
-            
-            h('div', { className: 'label', style: { marginTop: '30px' } }, 'Ingredients List'),
-            newRec.ingredients.map((ing, i) => h('div', { key: i, style: { display: 'flex', gap: '10px' } },
-              h('input', { placeholder: 'Item', onChange: e => { let ings = [...newRec.ingredients]; ings[i].name = e.target.value; setNewRec({...newRec, ingredients: ings}) } }),
-              h('input', { placeholder: 'Qty', style: { width: '80px' }, onChange: e => { let ings = [...newRec.ingredients]; ings[i].qty = e.target.value; setNewRec({...newRec, ingredients: ings}) } })
-            )),
-            h('button', { onClick: () => setNewRec({...newRec, ingredients: [...newRec.ingredients, {name:'', qty:''}]}), style: { color: 'var(--coral)', background: 'none', border: 'none', margin: '15px 0', fontFamily: 'Lora' } }, '+ Add Item'),
-            
-            h('div', { style: { display: 'flex', gap: '15px' } },
-              h('button', { className: 'btn-main', style: { background: 'var(--border)' }, onClick: () => setIsAdding(false) }, 'Cancel'),
-              h('button', { className: 'btn-main', onClick: () => { if(newRec.name) { setRecipes([...recipes, {...newRec, id: Date.now()}]); setIsAdding(false); } } }, 'Save Entry')
+        tab === 'recipes' && h('div', null,
+          recipes.map(r => h('div', { key: r.id, className: 'card' },
+            h('div', { style: { fontSize: '1.4rem', color: '#DA7756', marginBottom: '5px' } }, r.name),
+            h('div', { style: { fontSize: '0.9rem', color: '#9A8878', fontStyle: 'italic', marginBottom: '15px' } }, 'Serves ' + r.basePeople + ' in video'),
+            h('div', { style: { display: 'flex', gap: '10px' } },
+              h('button', { className: 'edit-btn', onClick: () => startEdit(r) }, 'Edit Math/Details'),
+              h('button', { className: 'edit-btn', onClick: () => confirm('Delete?') && setRecipes(recipes.filter(x => x.id !== r.id)) }, 'Delete')
             )
-          )
+          ))
+        ),
+
+        tab === 'add' && h('div', { className: 'card' },
+          h('div', { className: 'label' }, 'Recipe Name'),
+          h('input', { value: form.name, onChange: e => setForm({...form, name: e.target.value}) }),
+          h('div', { className: 'label' }, 'YouTube URL'),
+          h('input', { value: form.link, onChange: e => setForm({...form, link: e.target.value}) }),
+          h('div', { className: 'label' }, 'How many does this serve in the video?'),
+          h('input', { type: 'number', value: form.basePeople, onChange: e => setForm({...form, basePeople: e.target.value}) }),
+          
+          h('div', { className: 'label', style: { marginTop: '20px' } }, 'Ingredients List (Item | Qty)'),
+          form.ingredients.map((ing, i) => h('div', { key: i, style: { display: 'flex', gap: '10px' } },
+            h('input', { placeholder: 'Item', value: ing.name, onChange: e => { let ings = [...form.ingredients]; ings[i].name = e.target.value; setForm({...form, ingredients: ings}) } }),
+            h('input', { placeholder: 'Qty', style: { width: '80px' }, value: ing.qty, onChange: e => { let ings = [...form.ingredients]; ings[i].qty = e.target.value; setForm({...form, ingredients: ings}) } })
+          )),
+          h('button', { onClick: () => setForm({...form, ingredients: [...form.ingredients, {name:'', qty:''}]}), style: { color: '#DA7756', background: 'none', border: 'none', marginBottom: '20px', cursor: 'pointer' } }, '+ Add Row'),
+          h('button', { className: 'action-btn', onClick: saveRecipe }, editingId ? 'Update Recipe' : 'Save Recipe')
         )
       );
     }
