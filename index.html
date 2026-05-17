@@ -3,33 +3,60 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Dinner Planner</title>
+  <title>Dinner Notes</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    body { 
-      background-color: #F2F2F7; 
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-      color: #000000; 
+    /* FORCING DARK THEME */
+    :root {
+      --orange: #FF9500;
+      --black: #000000;
+      --card: #1C1C1E;
+      --border: #38383A;
+      --text: #FFFFFF;
+      --secondary: #8E8E93;
     }
-    button, input, select { font-family: inherit; }
-    ::-webkit-scrollbar { display: none; }
-    .ios-card { background: #FFFFFF; border-radius: 12px; margin-bottom: 16px; border: 0.5px solid #D1D1D6; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      background-color: var(--black) !important; 
+      color: var(--text) !important;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      display: flex;
+      justify-content: center; /* Centers the app on Mac */
+    }
+    #root {
+      width: 100%;
+      max-width: 500px; /* Prevents "Too Broad" look on laptop */
+      min-height: 100vh;
+      background: var(--black);
+      padding: 20px;
+    }
+    .notes-card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 0.5px solid var(--border);
+    }
+    input, select {
+      width: 100%;
+      background: var(--border);
+      border: none;
+      color: var(--text);
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 16px;
+      outline: none;
+    }
+    select { color: var(--orange); font-weight: 600; }
+    button { cursor: pointer; transition: opacity 0.2s; }
+    button:active { opacity: 0.6; }
   </style>
 </head>
 <body>
   <div id="root"></div>
   <script>
     const { createElement: h, useState, useEffect, Fragment } = React;
-
-    const C = {
-      orange: '#FF9500', // Authentic Apple Notes Orange
-      black: '#000000',
-      gray: '#8E8E93',
-      bg: '#F2F2F7',
-      white: '#FFFFFF'
-    };
 
     const generateDates = () => {
       const dates = [];
@@ -49,148 +76,122 @@
       const [tab, setTab] = useState('planner');
       const [recipes, setRecipes] = useState(() => JSON.parse(localStorage.getItem('sp_recipes')) || []);
       const [planner, setPlanner] = useState(() => JSON.parse(localStorage.getItem('sp_planner')) || {});
-      const [searchQuery, setSearchQuery] = useState('');
-      const [expandedRecipe, setExpandedRecipe] = useState(null);
-      
-      const dateList = generateDates();
-      const [selectedDateKey, setSelectedDateKey] = useState(dateList[0].key);
-      const [isAddingRecipe, setIsAddingRecipe] = useState(false);
+      const [search, setSearch] = useState('');
+      const [openId, setOpenId] = useState(null);
+      const [isAdding, setIsAdding] = useState(false);
       const [newRec, setNewRec] = useState({ name: '', link: '', basePeople: 2, ingredients: [{ name: '', qty: '' }] });
+
+      const dateList = generateDates();
+      const [selDate, setSelDate] = useState(dateList[0].key);
 
       useEffect(() => localStorage.setItem('sp_recipes', JSON.stringify(recipes)), [recipes]);
       useEffect(() => localStorage.setItem('sp_planner', JSON.stringify(planner)), [planner]);
 
-      const activePlan = planner[selectedDateKey] || { recipeId: '', peopleCount: 2 };
-      const currentRecipe = recipes.find(r => r.id === parseInt(activePlan.recipeId));
+      const plan = planner[selDate] || { recipeId: '', peopleCount: 2 };
+      const current = recipes.find(r => r.id === parseInt(plan.recipeId));
 
-      const filteredRecipes = recipes.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()));
-
-      return h('div', { style: { minHeight: '100vh', paddingBottom: '40px' } },
-        
-        // Navigation Header
-        h('div', { style: { padding: '40px 16px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-          h('h1', { style: { fontSize: '34px', fontWeight: 'bold', color: C.black } }, tab === 'planner' ? 'Dinner' : 'Recipes'),
+      return h('div', null,
+        // Header
+        h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', marginTop: '10px' } },
+          h('h1', { style: { fontSize: '32px', fontWeight: 'bold' } }, tab === 'planner' ? 'Dinner' : 'Library'),
           h('button', { 
             onClick: () => setTab(tab === 'planner' ? 'recipes' : 'planner'),
-            style: { border: 'none', background: 'none', color: C.orange, fontSize: '17px', fontWeight: '500' }
-          }, tab === 'planner' ? 'Recipe Book' : 'Back')
+            style: { background: 'none', border: 'none', color: 'var(--orange)', fontSize: '17px', fontWeight: '500' }
+          }, tab === 'planner' ? 'Edit Recipes' : 'Done')
         ),
 
         tab === 'planner' && h('div', null,
-          // Date Strip
-          h('div', { style: { display: 'flex', gap: '12px', overflowX: 'auto', padding: '10px 16px' } },
+          // Date Scroller
+          h('div', { style: { display: 'flex', gap: '12px', overflowX: 'auto', marginBottom: '20px', paddingBottom: '10px' } },
             dateList.map(d => {
-              const isSelected = selectedDateKey === d.key;
+              const active = selDate === d.key;
               return h('button', {
-                key: d.key, onClick: () => setSelectedDateKey(d.key),
+                key: d.key, onClick: () => setSelDate(d.key),
                 style: {
-                  minWidth: '50px', padding: '8px', borderRadius: '10px', border: 'none',
-                  background: isSelected ? C.orange : 'transparent',
-                  color: isSelected ? C.white : C.black, textAlign: 'center'
+                  minWidth: '55px', padding: '10px', borderRadius: '12px', border: 'none',
+                  background: active ? 'var(--orange)' : 'var(--card)', color: active ? '#000' : '#FFF'
                 }
               }, 
-                h('div', { style: { fontSize: '10px', fontWeight: 'bold', opacity: isSelected ? 1 : 0.5 } }, d.dayName),
+                h('div', { style: { fontSize: '10px', fontWeight: 'bold' } }, d.dayName),
                 h('div', { style: { fontSize: '20px', fontWeight: '600' } }, d.dateNum)
               );
             })
           ),
 
-          h('div', { style: { padding: '16px' } },
-            h('div', { className: 'ios-card', style: { padding: '16px' } },
-              h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' } },
-                h('span', { style: { fontSize: '17px', fontWeight: '600' } }, 'Heads: ' + activePlan.peopleCount),
-                h('div', { style: { display: 'flex', gap: '10px' } },
-                  ['−', '+'].map(op => h('button', {
-                    key: op,
-                    onClick: () => setPlanner({...planner, [selectedDateKey]: {...activePlan, peopleCount: op === '+' ? activePlan.peopleCount + 1 : Math.max(1, activePlan.peopleCount - 1)}}),
-                    style: { width: '32px', height: '32px', borderRadius: '50%', border: 'none', background: C.bg, color: C.orange, fontWeight: 'bold', fontSize: '18px' }
-                  }, op))
-                )
+          // Planner UI
+          h('div', { className: 'notes-card' },
+            h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' } },
+              h('div', null,
+                h('div', { style: { color: 'var(--secondary)', fontSize: '12px', fontWeight: 'bold' } }, 'GUESTS'),
+                h('div', { style: { fontSize: '22px', fontWeight: 'bold' } }, plan.peopleCount)
               ),
-              h('select', { 
-                value: activePlan.recipeId, 
-                onChange: (e) => setPlanner({...planner, [selectedDateKey]: {...activePlan, recipeId: e.target.value}}),
-                style: { width: '100%', padding: '12px', borderRadius: '8px', border: 'none', background: C.bg, fontSize: '17px', color: C.orange, fontWeight: '500', outline: 'none' }
-              },
-                h('option', { value: '' }, 'Choose Meal'),
-                recipes.map(r => h('option', { key: r.id, value: r.id }, r.name))
+              h('div', { style: { display: 'flex', gap: '12px' } },
+                ['-','+'].map(btn => h('button', {
+                  key: btn,
+                  onClick: () => setPlanner({...planner, [selDate]: {...plan, peopleCount: btn === '+' ? plan.peopleCount + 1 : Math.max(1, plan.peopleCount - 1)}}),
+                  style: { width: '35px', height: '35px', borderRadius: '50%', border: 'none', background: 'var(--border)', color: 'var(--orange)', fontSize: '20px', fontWeight: 'bold' }
+                }, btn))
               )
             ),
-
-            currentRecipe && h('div', { className: 'ios-card', style: { padding: '16px' } },
-              h('h3', { style: { fontSize: '13px', color: C.gray, textTransform: 'uppercase', marginBottom: '12px' } }, 'Ingredients List'),
-              currentRecipe.ingredients.map((ing, i) => h('div', { key: i, style: { display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '0.5px solid #eee' } },
-                h('span', null, ing.name),
-                h('span', { style: { fontWeight: 'bold', color: C.gray } }, ((ing.qty / currentRecipe.basePeople) * activePlan.peopleCount).toFixed(1))
-              )),
-              currentRecipe.link && h('a', { href: currentRecipe.link, target: '_blank', style: { display: 'block', marginTop: '15px', color: C.orange, textDecoration: 'none', fontWeight: '600' } }, 'Video Tutorial ↗')
+            h('select', { 
+              value: plan.recipeId, 
+              onChange: (e) => setPlanner({...planner, [selDate]: {...plan, recipeId: e.target.value}}),
+            },
+              h('option', { value: '' }, 'Tap to select meal...'),
+              recipes.map(r => h('option', { key: r.id, value: r.id }, r.name))
             )
+          ),
+
+          // Automated Shopping List
+          current && h('div', { className: 'notes-card' },
+            h('h3', { style: { color: 'var(--orange)', fontSize: '13px', marginBottom: '15px' } }, 'RECIPE SCALE FOR ' + plan.peopleCount),
+            current.ingredients.map((ing, i) => h('div', { key: i, style: { display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '0.5px solid var(--border)' } },
+              h('span', null, ing.name),
+              h('span', { style: { fontWeight: 'bold', color: 'var(--orange)' } }, ((ing.qty / current.basePeople) * plan.peopleCount).toFixed(1))
+            )),
+            current.link && h('a', { href: current.link, target: '_blank', style: { display: 'block', textAlign: 'center', marginTop: '20px', color: 'var(--orange)', fontWeight: 'bold', textDecoration: 'none' } }, 'Open Cooking Video ↗')
           )
         ),
 
-        tab === 'recipes' && h('div', { style: { padding: '0 16px' } },
-          !isAddingRecipe ? h(Fragment, null,
-            // Search Bar
-            h('input', {
-              placeholder: 'Search recipes...',
-              value: searchQuery,
-              onChange: (e) => setSearchQuery(e.target.value),
-              style: { width: '100%', padding: '12px', borderRadius: '10px', border: 'none', background: '#E3E3E8', marginBottom: '20px', fontSize: '16px' }
-            }),
+        tab === 'recipes' && h('div', null,
+          !isAdding ? h(Fragment, null,
+            h('input', { placeholder: 'Search...', value: search, onChange: e => setSearch(e.target.value), style: { marginBottom: '15px' } }),
+            h('button', { onClick: () => setIsAdding(true), style: { width: '100%', padding: '14px', background: 'var(--orange)', borderRadius: '10px', border: 'none', fontWeight: 'bold', marginBottom: '20px' } }, '+ Add New Recipe'),
             
-            h('button', { 
-              onClick: () => setIsAddingRecipe(true), 
-              style: { width: '100%', padding: '12px', background: 'none', border: '1px dashed ' + C.orange, color: C.orange, borderRadius: '10px', fontWeight: '600', marginBottom: '20px' } 
-            }, '+ Create New Recipe'),
-            
-            filteredRecipes.map(r => h('div', { 
-              key: r.id, 
-              className: 'ios-card',
-              style: { padding: '16px', overflow: 'hidden' }
-            },
-              h('div', { 
-                onClick: () => setExpandedRecipe(expandedRecipe === r.id ? null : r.id),
-                style: { display: 'flex', justifyContent: 'space-between', cursor: 'pointer' } 
-              },
-                h('div', null,
+            recipes.filter(r => r.name.toLowerCase().includes(search.toLowerCase())).map(r => h('div', { key: r.id, className: 'notes-card' },
+              h('div', { style: { display: 'flex', justifyContent: 'space-between' } },
+                h('div', { onClick: () => setOpenId(openId === r.id ? null : r.id), style: { flex: 1 } },
                   h('div', { style: { fontSize: '18px', fontWeight: '600' } }, r.name),
-                  h('div', { style: { fontSize: '13px', color: C.gray } }, 'Base: ' + r.basePeople + ' guests')
+                  h('div', { style: { color: 'var(--secondary)', fontSize: '12px' } }, 'Base: ' + r.basePeople + ' people')
                 ),
-                h('span', { style: { color: C.orange, fontSize: '20px' } }, expandedRecipe === r.id ? '↓' : '→')
+                r.link && h('a', { href: r.link, target: '_blank', style: { color: 'var(--orange)', textDecoration: 'none', fontWeight: 'bold' } }, 'LINK ↗')
               ),
-              
-              expandedRecipe === r.id && h('div', { style: { marginTop: '16px', borderTop: '0.5px solid #eee', paddingTop: '10px' } },
-                r.ingredients.map((ing, i) => h('div', { key: i, style: { display: 'flex', justifyContent: 'space-between', fontSize: '15px', padding: '4px 0' } },
+              openId === r.id && h('div', { style: { marginTop: '15px', borderTop: '0.5px solid var(--border)', paddingTop: '10px' } },
+                r.ingredients.map((ing, i) => h('div', { key: i, style: { display: 'flex', justifyContent: 'space-between', padding: '4px 0' } },
                   h('span', null, ing.name),
-                  h('span', { style: { color: C.gray } }, ing.qty)
+                  h('span', { style: { color: 'var(--secondary)' } }, ing.qty)
                 )),
-                h('div', { style: { marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-                  r.link ? h('a', { href: r.link, target: '_blank', style: { color: C.orange, textDecoration: 'none', fontWeight: '600', fontSize: '14px' } }, 'Watch Video') : h('div'),
-                  h('button', { 
-                    onClick: () => confirm('Delete?') && setRecipes(recipes.filter(x => x.id !== r.id)),
-                    style: { border: 'none', background: 'none', color: 'red', fontSize: '13px' } 
-                  }, 'Delete')
-                )
+                h('button', { onClick: () => confirm('Delete?') && setRecipes(recipes.filter(x => x.id !== r.id)), style: { color: 'red', background: 'none', border: 'none', marginTop: '15px', fontSize: '12px' } }, 'Delete')
               )
             ))
-          ) : h('div', { className: 'ios-card', style: { padding: '20px' } },
-            h('h3', { style: { marginBottom: '15px' } }, 'New Recipe'),
-            h('input', { placeholder: 'Name', style: { width: '100%', padding: '12px', marginBottom: '10px', background: C.bg, border: 'none', borderRadius: '8px' }, onChange: e => setNewRec({...newRec, name: e.target.value}) }),
-            h('input', { placeholder: 'YouTube Link', style: { width: '100%', padding: '12px', marginBottom: '10px', background: C.bg, border: 'none', borderRadius: '8px' }, onChange: e => setNewRec({...newRec, link: e.target.value}) }),
-            h('input', { type: 'number', placeholder: 'Base People', style: { width: '100%', padding: '12px', marginBottom: '10px', background: C.bg, border: 'none', borderRadius: '8px' }, onChange: e => setNewRec({...newRec, basePeople: e.target.value}) }),
+          ) : h('div', { className: 'notes-card' },
+            h('h2', { style: { marginBottom: '15px' } }, 'New Recipe'),
+            h('input', { placeholder: 'Recipe Name', style: { marginBottom: '10px' }, onChange: e => setNewRec({...newRec, name: e.target.value}) }),
+            h('input', { placeholder: 'YouTube URL', style: { marginBottom: '10px' }, onChange: e => setNewRec({...newRec, link: e.target.value}) }),
+            h('input', { type: 'number', placeholder: 'Servings in Video (e.g. 2)', style: { marginBottom: '20px' }, onChange: e => setNewRec({...newRec, basePeople: e.target.value}) }),
             
-            h('p', { style: { fontSize: '12px', color: C.gray, marginBottom: '8px', fontWeight: 'bold' } }, 'INGREDIENTS'),
+            h('div', { style: { fontSize: '12px', color: 'var(--secondary)', marginBottom: '10px' } }, 'INGREDIENTS'),
             newRec.ingredients.map((ing, i) => h('div', { key: i, style: { display: 'flex', gap: '8px', marginBottom: '8px' } },
-              h('input', { placeholder: 'Item', style: { flex: 2, padding: '10px', background: C.bg, border: 'none', borderRadius: '8px' }, onChange: e => { let ings = [...newRec.ingredients]; ings[i].name = e.target.value; setNewRec({...newRec, ingredients: ings}) } }),
-              h('input', { type: 'number', placeholder: 'Qty', style: { flex: 1, padding: '10px', background: C.bg, border: 'none', borderRadius: '8px' }, onChange: e => { let ings = [...newRec.ingredients]; ings[i].qty = e.target.value; setNewRec({...newRec, ingredients: ings}) } })
+              h('input', { placeholder: 'Item', onChange: e => { let ings = [...newRec.ingredients]; ings[i].name = e.target.value; setNewRec({...newRec, ingredients: ings}) } }),
+              h('input', { placeholder: 'Qty', style: { flex: '0.5' }, onChange: e => { let ings = [...newRec.ingredients]; ings[i].qty = e.target.value; setNewRec({...newRec, ingredients: ings}) } })
             )),
-            h('button', { onClick: () => setNewRec({...newRec, ingredients: [...newRec.ingredients, {name:'', qty:''}]}), style: { color: C.orange, background: 'none', border: 'none', fontSize: '14px', marginBottom: '20px' } }, '+ Add Row'),
+            h('button', { onClick: () => setNewRec({...newRec, ingredients: [...newRec.ingredients, {name:'', qty:''}]}), style: { color: 'var(--orange)', background: 'none', border: 'none', margin: '10px 0' } }, '+ Add Item'),
             
-            h('div', { style: { display: 'flex', gap: '10px' } },
-              h('button', { onClick: () => setIsAddingRecipe(false), style: { flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: '#E3E3E8' } }, 'Cancel'),
+            h('div', { style: { display: 'flex', gap: '10px', marginTop: '20px' } },
+              h('button', { onClick: () => setIsAdding(false), style: { flex: 1, padding: '12px', borderRadius: '10px', border: 'none', background: 'var(--border)', color: '#FFF' } }, 'Cancel'),
               h('button', { 
-                onClick: () => { if(newRec.name) { setRecipes([...recipes, {...newRec, id: Date.now()}]); setIsAddingRecipe(false); } },
-                style: { flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: C.orange, color: '#fff', fontWeight: 'bold' } 
+                onClick: () => { if(newRec.name) { setRecipes([...recipes, {...newRec, id: Date.now()}]); setIsAdding(false); } },
+                style: { flex: 1, padding: '12px', borderRadius: '10px', border: 'none', background: 'var(--orange)', color: '#000', fontWeight: 'bold' } 
               }, 'Save')
             )
           )
